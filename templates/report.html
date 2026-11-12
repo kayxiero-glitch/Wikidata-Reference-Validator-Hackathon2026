@@ -199,6 +199,36 @@
   const downloadBtn = document.getElementById("downloadBtn");
   if (downloadBtn) {
     downloadBtn.onclick = () => {
+      const rawData = localStorage.getItem("reportData");
+      if (!rawData) {
+        alert("No report data to download.");
+        return;
+      }
+      const data = JSON.parse(rawData);
+
+      const escapeCSV = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+      const header = ["URL", "Status", "Property", "Value", "Archive URL"];
+      const rows = data.references.map((ref) => [
+        ref.url,
+        ref.status,
+        ref.propertyLabel,
+        ref.statementValue,
+        ref.suggestedArchive ? ref.suggestedArchive.archiveUrl : ""
+      ]);
+
+      const csv = [header, ...rows]
+        .map((row) => row.map(escapeCSV).join(","))
+        .join("\n");
+
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "reference-validation-results.csv";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
     };
   }
 </script>
